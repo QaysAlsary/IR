@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        select, input[type="text"], button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .autocomplete-suggestions {
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+        .autocomplete-suggestion {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .autocomplete-suggestion:hover {
+            background-color: #e9ecef;
+        }
+        .search-result {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .search-result:hover {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Interface</h1>
+        <select id="dataset-selector">
+            <option value="clinicaltrials">Clinical Trials</option>
+            <option value="lifestyle">Lifestyle</option>
+        </select>
+        <input type="text" id="search-query" placeholder="Enter your query">
+        <div id="autocomplete-container" class="autocomplete-suggestions"></div>
+        <button id="search-button">Search</button>
+        <h2>Search History</h2>
+        <div id="search-history" class="autocomplete-suggestions"></div>
+        <div id="search-results"></div>
+    </div>
+    <script>
+        function updateSearchHistory() {
+            const dataset = document.getElementById('dataset-selector').value;
+            fetch(`http://127.0.0.1:8007/user_queries?dataset=${dataset}`)
+                .then(response => response.json())
+                .then(data => {
+                    const historyContainer = document.getElementById('search-history');
+                    historyContainer.innerHTML = '';
+                    data.reverse().forEach(query => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-suggestion';
+                        div.innerText = query;
+                        div.addEventListener('click', function() {
+                            document.getElementById('search-query').value = query;
+                            document.getElementById('autocomplete-container').innerHTML = '';
+                        });
+                        historyContainer.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching search history:', error);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSearchHistory();
+
+            document.getElementById('search-query').addEventListener('input', function() {
+                const query = this.value;
+                const dataset = document.getElementById('dataset-selector').value;
+                if (query.length > 1) {
+                    fetch(`http://127.0.0.1:8007/refine_query?dataset=${dataset}&query=${query}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const container = document.getElementById('autocomplete-container');
+                            container.innerHTML = '';
+
+                            if (data.corrected_query && data.corrected_query !== query) {
+                                const div = document.createElement('div');
+                                div.className = 'autocomplete-suggestion';
+                                div.innerText = `Did you mean: ${data.corrected_query}?`;
+                                div.addEventListener('click', function() {
+                                    document.getElementById('search-query').value = data.corrected_query;
+                                    container.innerHTML = '';
+                                });
+                                container.appendChild(div);
+                            }
+
+                            const suggestions = [
+                                ...data.autocomplete_suggestions.slice(0, 2),
+                                ...data.alternative_suggestions.slice(0, 2),
+                                ...data.expanded_terms.slice(0, 2)
+                            ];
+
+                            suggestions.forEach(suggestion => {
+                                const div = document.createElement('div');
+                                div.className = 'autocomplete-suggestion';
+                                div.innerText = suggestion;
+                                div.addEventListener('click', function() {
+                                    document.getElementById('search-query').value = suggestion;
+                                    container.innerHTML = '';
+                                });
+                                container.appendChild(div);
+                            });
+                        });
+                }
+            });
+
+            document.getElementById('search-button').addEventListener('click', function() {
+                const query = document.getElementById('search-query').value;
+                const dataset = document.getElementById('dataset-selector').value;
+                fetch('http://127.0.0.1:8004/docs_ids_search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, dataset, dataset_type: 'generic' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultsContainer = document.getElementById('search-results');
+                    resultsContainer.innerHTML = '';
+                    const results = data.result_docs.slice(0, 10); // Get the first 10 results
+                    results.forEach(result => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result';
+                        div.innerText = result;
+                        div.addEventListener('mouseover', function() {
+                            this.style.backgroundColor = '#e9ecef';
+                        });
+                        div.addEventListener('mouseout', function() {
+                            this.style.backgroundColor = '#f8f9fa';
+                        });
+                        div.addEventListener('click', function() {
+                            window.open(`document.html?dataset=${dataset}&doc_id=${result}&query=${query}`, '_blank');
+                        });
+                        resultsContainer.appendChild(div);
+                    });
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+            });
+
+            document.getElementById('dataset-selector').addEventListener('change', updateSearchHistory);
+        });
+    </script>
+</body>
+</html>

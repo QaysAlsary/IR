@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        pre {
+            white-space: pre-wrap; /* Ensure XML content wraps */
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .feedback-container {
+            margin-top: 20px;
+        }
+        .feedback-container button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            padding: 10px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+        }
+        .feedback-container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Document Details</h1>
+        <div id="document-content"></div>
+        <div class="feedback-container">
+            <button id="relevant-button">Relevant</button>
+            <button id="irrelevant-button">Irrelevant</button>
+        </div>
+    </div>
+    <script>
+        function getQueryParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                dataset: urlParams.get('dataset'),
+                doc_id: urlParams.get('doc_id'),
+                query: urlParams.get('query')
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const { dataset, doc_id, query } = getQueryParams();
+
+            fetch(`http://127.0.0.1:8007/get_document?dataset=${dataset}&doc_id=${doc_id}`)
+                .then(response => response.json())
+                .then(data => {
+                    const contentContainer = document.getElementById('document-content');
+                    if (dataset === 'lifestyle') {
+                        contentContainer.innerHTML = `<pre>${JSON.stringify(data.content, null, 2)}</pre>`;
+                    } else if (dataset === 'clinicaltrials') {
+                        contentContainer.innerHTML = `<pre>${data.xml_content}</pre>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching document details:', error);
+                    document.getElementById('document-content').innerText = 'Error loading document details.';
+                });
+
+            // Attach query parameter to feedback buttons
+            document.getElementById('relevant-button').addEventListener('click', function() {
+                logFeedback(true, query);
+            });
+
+            document.getElementById('irrelevant-button').addEventListener('click', function() {
+                logFeedback(false, query);
+            });
+        });
+
+        function logFeedback(relevance, query) {
+    const { dataset, doc_id } = getQueryParams();
+
+    if (!query) {
+        alert("Query parameter is missing in the URL.");
+        return;
+    }
+
+    const feedbackData = {
+        query: query,
+        doc_id: doc_id,
+        relevance: relevance
+    };
+
+    fetch(`http://127.0.0.1:8007/log_feedback?dataset=${dataset}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedbackData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Feedback logged:', data);
+    })
+    .catch(error => {
+        console.error('Error logging feedback:', error);
+    });
+}
+    </script>
+</body>
+</html>

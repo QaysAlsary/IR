@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Search with KMeans Clustering</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9; /* Light gray background */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745; /* Green button */
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838; /* Darker green on hover */
+        }
+        #search-results {
+            margin-top: 20px;
+        }
+        #search-results ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #search-results ul li {
+            margin-bottom: 5px;
+            padding: 5px;
+            background-color: #f9f9f9; /* Light gray background for search results */
+            border-radius: 4px;
+        }
+    </style>
+    <script>
+        // Function to make API request and display results
+        async function searchDocuments() {
+            const query = document.getElementById('search-query').value;
+            const dataset = document.getElementById('dataset-selector').value;
+
+            // Make API request to search documents with KMeans clustering
+            const response = await fetch('http://127.0.0.1:8009/docsIdsSearchWithKmeans/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    dataset: dataset
+                })
+            });
+
+            // Parse response JSON
+            const data = await response.json();
+
+            // Display document IDs or handle error
+            if (response.ok) {
+                const resultsContainer = document.getElementById('search-results');
+                resultsContainer.innerHTML = '';
+                if (data.length > 0) {
+                    const resultList = document.createElement('ul');
+                    data.forEach(docId => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = docId;
+                        resultList.appendChild(listItem);
+                    });
+                    resultsContainer.appendChild(resultList);
+                } else {
+                    resultsContainer.textContent = 'No documents found.';
+                }
+            } else {
+                alert('Error: ' + data.detail); // Display error message
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Document Search with KMeans Clustering</h1>
+    <div class="container">
+        <label for="search-query">Enter your query:</label>
+        <input type="text" id="search-query" placeholder="Enter your query">
+        <label for="dataset-selector">Select dataset:</label>
+        <select id="dataset-selector">
+            <option value="clinicaltrials">Clinical Trials</option>
+            <option value="lifestyle">Lifestyle</option>
+        </select>
+        <button onclick="searchDocuments()">Search</button>
+        <div id="search-results"></div>
+    </div>
+</body>
+</html>
