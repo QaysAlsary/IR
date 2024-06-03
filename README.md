@@ -1,93 +1,112 @@
-# IR
+# Information Retrieval System
 
+This repository contains the implementation of an Information Retrieval (IR) system that processes, analyzes, and retrieves relevant documents based on user queries using datasets from clinical trials and lifestyle forums. The project incorporates various services for text processing, vectorization using TF-IDF, document ranking, clustering, and evaluation of the search results.
 
+## Table of Contents
 
-## Getting started
+1. [Datasets](#datasets)
+2. [Project Structure](#project-structure)
+3. [Services Overview](#services-overview)
+4. [Execution Flow](#execution-flow)
+5. [Evaluation Metrics](#evaluation-metrics)
+6. [Installation and Setup](#installation-and-setup)
+7. [Usage](#usage)
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Datasets
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### First Dataset: "clinicaltrials/2021/trec-ct-2021"
+- **Documents:** 375,580
+- **Queries:** 75
+- **Query File:** Contains 35,832 records matching the query file
 
-## Add your files
+### Second Dataset: "lotte/lifestyle/dev/forum"
+- **Documents:** 268,893
+- **Queries:** 2,100
+- **Query File:** Contains multiple records
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Project Structure
 
-```
-cd existing_repo
-git remote add origin https://gitlab.com/QaysAlsary/ir.git
-git branch -M main
-git push -uf origin main
-```
+- **get_data_set.py**: Restructures the raw datasets for processing.
+- **text_processing.py**: Contains functions for preprocessing text data.
+- **Tfidf.py**: Implements TF-IDF vectorization and similarity calculations.
+- **Ranking.py**: Ranks documents based on similarity scores.
+- **search_service.py**: Orchestrates the search process and interfaces with the UI.
+- **auto_complete.py**: Provides query suggestions and updates based on user feedback.
+- **clustering.py, clusteringsearch.py**: Implements clustering-based search techniques.
+- **evaluate.py**: Evaluates the search engine's performance using various metrics.
+- **main.py**: Entry point of the application.
+- **document.html, index.html**: HTML files for the web interface.
 
-## Integrate with your tools
+## Services Overview
 
-- [ ] [Set up project integrations](https://gitlab.com/QaysAlsary/ir/-/settings/integrations)
+### Text Processing Service
+Handles text preprocessing tasks such as tokenization, case conversion, URL and punctuation removal, stopword removal, stemming, and lemmatization.
 
-## Collaborate with your team
+### TF-IDF Service
+Transforms text documents into TF-IDF vectors, calculates similarity scores, and manages TF-IDF models.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+### Ranking Service
+Sorts documents based on their relevance to the query using similarity scores.
 
-## Test and Deploy
+### Search Service
+Integrates with the user interface to handle search requests and return ranked results.
 
-Use the built-in continuous integration in GitLab.
+### Auto-Complete Service
+Provides search suggestions and updates dictionaries based on user interactions.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+### Clustering Search Service
+Uses K-Means clustering to group similar documents and improve search results.
 
-***
+### Evaluate Service
+Evaluates the IR system using metrics like Mean Average Precision (MAP), Precision@10, Mean Recall, and MRR.
 
-# Editing this README
+## Execution Flow
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Without Clustering
+1. **UI Interaction**: User selects dataset and enters a query.
+2. **Auto-Complete Service**: Provides query suggestions.
+3. **Search Service**: 
+   - Processes the query using Text Processing Service.
+   - Converts the query to a TF-IDF vector.
+   - Calculates cosine similarity between the query vector and document vectors.
+   - Sorts documents using Ranking Service.
+4. **UI**: Displays sorted search results.
+5. **Feedback**: User feedback updates auto-complete suggestions.
 
-## Suggestions for a good README
+### With Clustering
+1. **UI Interaction**: User selects dataset and enters a query.
+2. **Auto-Complete Service**: Provides query suggestions.
+3. **Search Service**:
+   - Processes the query using Text Processing Service.
+   - Converts the query to a TF-IDF vector.
+   - Determines the best-matching cluster using Clustering Search Service.
+   - Calculates similarity within the cluster.
+   - Sorts documents using Ranking Service.
+4. **UI**: Displays sorted search results.
+5. **Feedback**: User feedback updates auto-complete suggestions.
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Evaluation Metrics
+The system is evaluated using the following metrics:
+- **Mean Average Precision (MAP)**
+- **Precision@10**
+- **Mean Recall**
+- **Mean Reciprocal Rank (MRR)**
 
-## Name
-Choose a self-explaining name for your project.
+## Installation and Setup
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/QaysAlsary/IR.git
+   cd IR
+2. Install the required dependencies:
+pip install -r requirements.txt
+3. Download and prepare the datasets as per the project requirements.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+1. Run the main application:
+python main.py
+2. Access the web interface at http://localhost:5000 to interact with the IR system.
+3. Evaluate the system:
+- **Run the evaluation script to measure the performance of the IR system.**
+python evaluate.py
